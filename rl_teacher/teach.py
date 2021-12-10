@@ -6,9 +6,10 @@ from time import time, sleep
 
 import numpy as np
 import tensorflow as tf
-from keras import backend as K
+from tensorflow.keras import backend as K
 from parallel_trpo.train import train_parallel_trpo
 from pposgd_mpi.run_mujoco import train_pposgd_mpi
+from es_augmentenv.train import train_es_augment
 
 from rl_teacher.comparison_collectors import SyntheticComparisonCollector, HumanComparisonCollector
 from rl_teacher.envs import get_timesteps_per_episode
@@ -49,7 +50,8 @@ class ComparisonRewardPredictor():
         self.recent_segments = deque(maxlen=200)  # Keep a queue of recently seen segments to pull new comparisons from
         self._frames_per_segment = CLIP_LENGTH * env.fps
         self._steps_since_last_training = 0
-        self._n_timesteps_per_predictor_training = 1e2  # How often should we train our predictor?
+        self._n_timesteps_per_predictor_training = 1e5  # How often should we train our predictor?
+        self._max_comparison_buffer = 100
         self._elapsed_predictor_training_iters = 0
 
         # Build and initialize our predictor model
@@ -150,19 +152,25 @@ class ComparisonRewardPredictor():
         if segment:
             self.recent_segments.append(segment)
 
-        # If we need more comparisons, then we build them from our recent segments
         if len(self.comparison_collector) < int(self.label_schedule.n_desired_labels):
             self.comparison_collector.add_segment_pair(
                 random.choice(self.recent_segments),
                 random.choice(self.recent_segments))
 
-        # Train our predictor every X steps
-        if self._steps_since_last_training >= int(self._n_timesteps_per_predictor_training):
-            self.train_predictor()
+        if len(self.comparison_collector) % self._max_comparison_buffer == 0: # Train our predictor every X comparisons
+            while len(self.comparison_collector.labeled_comparisons) < len(
+                    self.comparison_collector):  # pretrain_labels *.75
+                self.comparison_collector.label_unlabeled_comparisons()
+                print("%s/%s comparisons labeled. Please add labels w/ the human-feedback-api. Sleeping... " % (
+                    len(self.comparison_collector.labeled_comparisons), len(self.comparison_collector)))
+                sleep(5)
+            print("Training Predictor")
+            for i in range(500):
+                self.train_predictor()
             self._steps_since_last_training -= self._steps_since_last_training
 
     def train_predictor(self):
-        self.comparison_collector.label_unlabeled_comparisons()
+        #self.comparison_collector.label_unlabeled_comparisons()
 
         minibatch_size = min(64, len(self.comparison_collector.labeled_decisive_comparisons))
         labeled_comparisons = random.sample(self.comparison_collector.labeled_decisive_comparisons, minibatch_size)
@@ -215,7 +223,7 @@ def main():
     parser.add_argument('-p', '--predictor', required=True)
     parser.add_argument('-n', '--name', required=True)
     parser.add_argument('-s', '--seed', default=1, type=int)
-    parser.add_argument('-w', '--workers', default=4, type=int)
+    parser.add_argument('-w', '--workers', default=1, type=int)
     parser.add_argument('-l', '--n_labels', default=None, type=int)
     parser.add_argument('-L', '--pretrain_labels', default=None, type=int)
     parser.add_argument('-t', '--num_timesteps', default=5e6, type=int)
@@ -278,7 +286,7 @@ def main():
             comparison_collector.add_segment_pair(pretrain_segments[i], pretrain_segments[i + pretrain_labels])
 
         # Sleep until the human has labeled most of the pretraining comparisons
-        while len(comparison_collector.labeled_comparisons) < int(pretrain_labels * 0.75):
+        while len(comparison_collector.labeled_comparisons) < int(pretrain_labels): #pretrain_labels *.75
             comparison_collector.label_unlabeled_comparisons()
             if args.predictor == "synth":
                 print("%s synthetic labels generated... " % (len(comparison_collector.labeled_comparisons)))
@@ -318,6 +326,10 @@ def main():
             return make_with_torque_removed(env_id)
 
         train_pposgd_mpi(make_env, num_timesteps=num_timesteps, seed=args.seed, predictor=predictor)
+    elif args.agent == "es_augment":
+        def make_env():
+            return make_with_torque_removed(env_id)
+        train_es_augment(make_env, seed=args.seed, predictor=predictor)
     else:
         raise ValueError("%s is not a valid choice for args.agent" % args.agent)
 

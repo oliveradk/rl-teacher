@@ -1,8 +1,8 @@
 import numpy as np
 import tensorflow as tf
 
-from keras.layers import Dense, Dropout, LeakyReLU
-from keras.models import Sequential
+from tensorflow.keras.layers import Dense, Dropout, LeakyReLU
+from tensorflow.keras.models import Sequential
 
 class FullyConnectedMLP(object):
     """Vanilla two hidden layer multi-layer perceptron"""

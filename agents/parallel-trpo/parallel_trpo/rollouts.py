@@ -139,7 +139,7 @@ class ParallelRollout(object):
         paths = []
         for _ in range(num_rollouts):
             path = self.results_q.get()
-
+            print("Modifying Reward")
             ################################
             #  START REWARD MODIFICATIONS  #
             ################################

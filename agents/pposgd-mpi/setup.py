@@ -10,7 +10,7 @@ setup(name='pposgd_mpi',
     version='0.0.1',
     install_requires=[
         'mujoco-py ~=0.5.7',
-        'gym>=0.9.1[mujoco]',
+        #'gym>=0.9.1[mujoco]',
         'mujoco-py',
         'scipy',
         'tqdm',
@@ -18,7 +18,7 @@ setup(name='pposgd_mpi',
         'zmq',
         'dill',
         'progressbar2',
-        'mpi4py ~= 2.0.0'
+        'mpi4py'
     ],
     # https://github.com/tensorflow/tensorflow/issues/7166#issuecomment-280881808
     extras_require={

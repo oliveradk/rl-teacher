@@ -18,7 +18,7 @@ class LabelAnnealer(object):
         return desired_frac * self._final_labels
 
 class ConstantLabelSchedule(object):
-    def __init__(self, pretrain_labels, seconds_between_labels=3.0):
+    def __init__(self, pretrain_labels, seconds_between_labels=3):
         self._started_at = None  # Don't initialize until we call n_desired_labels
         self._seconds_between_labels = seconds_between_labels
         self._pretrain_labels = pretrain_labels

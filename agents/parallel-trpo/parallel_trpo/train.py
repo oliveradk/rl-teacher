@@ -78,7 +78,7 @@ def train_parallel_trpo(
         # output stats
         print("-------- Iteration %d ----------" % iteration)
 
-        frames_gathered_per_second = stats["Frames gathered"] / rollout_time
+        frames_gathered_per_second = 0 if rollout_time == 0 else stats["Frames gathered"] / rollout_time
         stats["Frames gathered/second"] = int(frames_gathered_per_second)
 
         stats['Time spent gathering rollouts'] = rollout_time
