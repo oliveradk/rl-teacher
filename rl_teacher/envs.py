@@ -5,6 +5,8 @@ import numpy as np
 from gym.envs import mujoco
 from gym.wrappers.time_limit import TimeLimit
 
+from es_augmentenv.envs.gym_mujoco_walkers import AugmentHopper
+
 class TransparentWrapper(gym.Wrapper):
     """Passes missing attributes through the wrapper stack"""
 
@@ -97,6 +99,8 @@ def task_by_name(name, short=False):
         return pendulum()
     elif name in ["doublependulum"]:
         return double_pendulum()
+    elif "augment_hopper":
+        return augment_hopper(short=short)
     else:
         raise ValueError(name)
 
@@ -136,6 +140,14 @@ def reacher(short=False):
 def hopper(short=False):
     bonus = lambda a, data: (data.qpos[1, 0] - 1) + 1e-3 * np.square(a).sum()
     env = mujoco.HopperEnv()
+    env = MjViewer(fps=40, env=env)
+    env = NeverDone(bonus=bonus, env=env)
+    env = limit(t=300 if short else 1000, env=env)
+    return env
+
+def augment_hopper(short=False):
+    bonus = lambda a, data: (data.qpos[1, 0] - 1) + 1e-3 * np.square(a).sum()
+    env = AugmentHopper()
     env = MjViewer(fps=40, env=env)
     env = NeverDone(bonus=bonus, env=env)
     env = limit(t=300 if short else 1000, env=env)
