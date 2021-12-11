@@ -6,10 +6,13 @@ import gym.spaces.prng as space_prng
 from rl_teacher.envs import get_timesteps_per_episode
 
 def _slice_path(path, segment_length, start_pos=0):
-    return {
+    slice_path = {
         k: np.asarray(v[start_pos:(start_pos + segment_length)])
         for k, v in path.items()
         if k in ['obs', "actions", 'original_rewards', 'human_obs']}
+    if "env_params" in path:
+        slice_path["env_params"] = path["env_params"]
+    return slice_path
 
 def create_segment_q_states(segment):
     obs_Ds = segment["obs"]

@@ -221,7 +221,8 @@ def compress_input_dct(obs):
   new_obs /= float(obs.shape[2])
   return new_obs.flatten()
 
-def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, max_len=-1):
+def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, max_len=-1, predictor=None,
+             feedback=False):
 
   reward_list = []
   t_list = []
@@ -242,6 +243,11 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
   model.augment_env()
 
   for episode in range(num_episode):
+    #history lists
+    obs_list = []
+    rewards_list = []
+    actions_list = []
+    human_obs_list = []
 
     if model.rnn_mode:
       model.reset()
@@ -275,6 +281,11 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
 
       obs, reward, done, info = model.env.step(action)
 
+      obs_list.append(prev_obs)
+      rewards_list.append(reward)
+      actions_list.append(action)
+      human_obs_list.append(info.get("human_obs"))
+
       if dct_compress_mode:
         obs = compress_input_dct(obs)
 
@@ -286,6 +297,14 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
       if done:
         if train_mode and (total_reward > reward_threshold):
           total_reward += 100
+
+        if predictor:
+          path = {"obs": obs_list, "original_rewards": rewards_list, "actions": actions_list,
+                  "human_obs": human_obs_list, "env_params": model.body_param}
+          path["rew"] = predictor.predict_reward(path)
+          if feedback:
+            predictor.path_callback(path)
+          total_reward = np.sum(path["rew"])
         break
 
     if render_mode:

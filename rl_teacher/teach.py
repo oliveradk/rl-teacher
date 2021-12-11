@@ -51,7 +51,7 @@ class ComparisonRewardPredictor():
         self._frames_per_segment = CLIP_LENGTH * env.fps
         self._steps_since_last_training = 0
         self._n_timesteps_per_predictor_training = 1e5  # How often should we train our predictor?
-        self._max_comparison_buffer = 100
+        self._max_comparison_buffer = 10
         self._elapsed_predictor_training_iters = 0
 
         # Build and initialize our predictor model
@@ -151,7 +151,7 @@ class ComparisonRewardPredictor():
         segment = sample_segment_from_path(path, int(self._frames_per_segment))
         if segment:
             self.recent_segments.append(segment)
-
+        print(f"{len(self.comparison_collector)} / {self.label_schedule.n_desired_labels} labels collected")
         if len(self.comparison_collector) < int(self.label_schedule.n_desired_labels):
             self.comparison_collector.add_segment_pair(
                 random.choice(self.recent_segments),
@@ -215,6 +215,14 @@ class ComparisonRewardPredictor():
         self.agent_logger.log_simple("labels/total_comparisons", len(self.comparison_collector))
         self.agent_logger.log_simple(
             "labels/labeled_comparisons", len(self.comparison_collector.labeled_decisive_comparisons))
+
+
+#TODO: predictor that takes in morphological parameters
+class ComparisonMorphologyRewardPredictor(ComparisonRewardPredictor):
+    def __init__(self, env, summary_writer, comparison_collector, agent_logger, label_schedule):
+        #self.morph_shape = env.
+        pass
+
 
 def main():
     import argparse

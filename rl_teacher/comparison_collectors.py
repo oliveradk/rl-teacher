@@ -51,6 +51,8 @@ class SyntheticComparisonCollector(object):
 
 def _write_and_upload_video(env_id, gcs_path, local_path, segment):
     env = make_with_torque_removed(env_id)
+    if hasattr(env, "augment_env") and "env_params" in segment:
+        env.augment_env(segment["env_params"])
     write_segment_to_video(segment, fname=local_path, env=env)
     upload_to_gcs(local_path, gcs_path)
 
@@ -72,7 +74,8 @@ class HumanComparisonCollector():
         local_path = osp.join(tmp_media_dir, media_id)
         gcs_bucket = os.environ.get('RL_TEACHER_GCS_BUCKET')
         gcs_path = osp.join(gcs_bucket, media_id)
-        self._upload_workers.apply_async(_write_and_upload_video, (self.env_id, gcs_path, local_path, segment))
+        _write_and_upload_video(self.env_id, gcs_path, local_path, segment)
+        #self._upload_workers.apply_async(_write_and_upload_video, (self.env_id, gcs_path, local_path, segment))
 
         media_url = "https://storage.googleapis.com/%s/%s" % (gcs_bucket.lstrip("gs://"), media_id)
         return media_url

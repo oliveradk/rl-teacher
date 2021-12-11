@@ -7,12 +7,12 @@ from es_augmentenv import config
 
 from gym.wrappers import Monitor
 
-def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=4, optimizer="cmaes",predictor=None,
-                     show_video=True):
+def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=1, optimizer="cmaes",predictor=None,
+                     show_video=False, feedback_interval=20):
     game_name = "augment_hopper"
     game = config.games[game_name]
-    sigma_init = 10
-    sigma_decay = .9
+    sigma_init = .3
+    sigma_decay = .99
 
     model = make_model(game, make_env_inner=make_env)
     model.make_env()
@@ -35,6 +35,7 @@ def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=4, 
         print(f"{optimizer} not a valid optimizer")
 
     gen = 0
+    episodes = 0
     # initialize logging data
     # start_time = int(time.time())
     #
@@ -45,15 +46,16 @@ def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=4, 
         solutions = es.ask()
 
         #evaluate population
-        #TODO: define modified function that takes in predictor, and writes trajectories to it (or not depending on predictor)
         reward_list = []
         t_list = []
         seeds = seeder.next_batch(pop_size)
         for i, solution in enumerate(tqdm(solutions)):
             model.set_model_params(solution)
             model.make_env()
+            feedback = episodes % feedback_interval == 0
             rewards, ts = simulate(model, train_mode=True, render_mode=False, num_episode=num_episodes, seed=seeds[i],
-                                   max_len=max_len)
+                                   max_len=max_len, predictor=predictor, feedback=feedback)
+            episodes += num_episodes
             reward_list.append(np.min(rewards))
             t_list.append(np.mean(ts))
         es.tell(reward_list)
