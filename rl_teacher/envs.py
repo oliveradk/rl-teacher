@@ -26,7 +26,7 @@ class MjViewer(TransparentWrapper):
         super().__init__(env)
 
     def _get_full_obs(self):
-        return (copy(self.env.model.data.qpos[:, 0]), copy(self.env.model.data.qvel[:, 0]))
+        return (copy(self.env.sim.data.qpos), copy(self.env.sim.data.qvel))
 
     def _set_full_obs(self, obs):
         qpos, qvel = obs[0], obs[1]
@@ -69,7 +69,7 @@ class NeverDone(TransparentWrapper):
 
     def _step(self, a):
         ob, reward, done, info = super()._step(a)
-        bonus = self.bonus(a, self.env.model.data)
+        bonus = self.bonus(a, self.env.sim.data)
         reward = reward + bonus
         done = False
         return ob, reward, done, info

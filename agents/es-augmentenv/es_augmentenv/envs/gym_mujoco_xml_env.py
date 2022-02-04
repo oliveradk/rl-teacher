@@ -2,7 +2,7 @@ import numpy as np
 
 from gym.envs.mujoco import MujocoEnv
 from gym import spaces
-import mujoco_py
+from mujoco_py import MjSim, load_model_from_path
 
 
 class AugmentMujocoXmlEnv(MujocoEnv):
@@ -11,23 +11,21 @@ class AugmentMujocoXmlEnv(MujocoEnv):
     """
 
     def set_model(self, model_path):
-        self.model = mujoco_py.MjModel(model_path)
-        self.data = self.model.data
+        self.model = load_model_from_path(model_path)
+        self.sim = MjSim(self.model)
+        self.data = self.sim.data
         self.viewer = None
+        self._viewers = {}
 
-        self.init_qpos = self.model.data.qpos.ravel().copy()
-        self.init_qvel = self.model.data.qvel.ravel().copy()
-        observation, _reward, done, _info = self._step(np.zeros(self.model.nu))
+        self.init_qpos = self.sim.data.qpos.ravel().copy()
+        self.init_qvel = self.sim.data.qvel.ravel().copy()
+
+        self._set_action_space()
+
+        action = self.action_space.sample()
+        observation, _reward, done, _info = self.step(action)
         assert not done
-        self.obs_dim = observation.size
 
-        bounds = self.model.actuator_ctrlrange.copy()
-        low = bounds[:, 0]
-        high = bounds[:, 1]
-        self.action_space = spaces.Box(low, high)
+        self._set_observation_space(observation)
 
-        high = np.inf * np.ones(self.obs_dim)
-        low = -high
-        self.observation_space = spaces.Box(low, high)
-
-        self._seed()
+        self.seed()

@@ -17,10 +17,10 @@ class AugmentHopper(AugmentMujocoXmlEnv):
         self.set_model(generate_hopper_xml(scale_vector))
         time.sleep(FILE_SLEEP_TIME) # sleep for a random amount of time to avoid harddisk file errors.
 
-    def _step(self, a):
-        posbefore = self.model.data.qpos[0, 0]
+    def step(self, a):
+        posbefore = self.sim.data.qpos[0]
         self.do_simulation(a, self.frame_skip)
-        posafter, height, ang = self.model.data.qpos[0:3, 0]
+        posafter, height, ang = self.sim.data.qpos[0:3]
         alive_bonus = 1.0
         reward = (posafter - posbefore) / self.dt
         reward += alive_bonus
@@ -28,20 +28,20 @@ class AugmentHopper(AugmentMujocoXmlEnv):
         s = self.state_vector()
         done = not (np.isfinite(s).all() and (np.abs(s[2:]) < 100).all() and
                     (height > .7) and (abs(ang) < .2))
-        ob = self._get_obs()
+        ob = self.get_obs()
         return ob, reward, done, {}
 
-    def _get_obs(self):
+    def get_obs(self):
         return np.concatenate([
-            self.model.data.qpos.flat[1:],
-            np.clip(self.model.data.qvel.flat, -10, 10)
+            self.sim.data.qpos.flat[1:],
+            np.clip(self.sim.data.qvel.flat, -10, 10)
         ])
 
     def reset_model(self):
         qpos = self.init_qpos + self.np_random.uniform(low=-.005, high=.005, size=self.model.nq)
         qvel = self.init_qvel + self.np_random.uniform(low=-.005, high=.005, size=self.model.nv)
         self.set_state(qpos, qvel)
-        return self._get_obs()
+        return self.get_obs()
 
     def viewer_setup(self):
         self.viewer.cam.trackbodyid = 2
