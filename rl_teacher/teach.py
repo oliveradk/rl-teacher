@@ -5,7 +5,7 @@ from collections import deque
 from time import time, sleep
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 from tensorflow.keras import backend as K
 from parallel_trpo.train import train_parallel_trpo
 from pposgd_mpi.run_mujoco import train_pposgd_mpi
@@ -93,6 +93,7 @@ class ComparisonRewardPredictor():
         of which segment is better. We then learn the weights for our model by comparing
         these labels with an authority (either a human or synthetic labeler).
         """
+        tf.disable_eager_execution()
         # Set up observation placeholders
         self.segment_obs_placeholder = tf.placeholder(
             dtype=tf.float32, shape=(None, None) + self.obs_shape, name="obs_placeholder")

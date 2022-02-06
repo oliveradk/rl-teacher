@@ -3,13 +3,14 @@ import os.path as osp
 from collections import deque
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 CLIP_LENGTH = 1.5
 
 def make_summary_writer(name):
     logs_path = osp.expanduser('~/tb/rl-teacher/%s' % (name))
-    return tf.summary.FileWriter(logs_path)
+    with tf.Graph().as_default():
+        return tf.summary.FileWriter(logs_path)
 
 def add_simple_summary(summary_writer, tag, simple_value, step):
     summary_writer.add_summary(tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=simple_value)]), step)

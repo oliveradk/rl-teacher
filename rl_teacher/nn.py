@@ -1,5 +1,6 @@
 import numpy as np
 import tensorflow as tf
+import tf_slim as slim
 
 from tensorflow.keras.layers import Dense, Dropout, LeakyReLU
 from tensorflow.keras.models import Sequential
@@ -22,6 +23,6 @@ class FullyConnectedMLP(object):
         self.model.add(Dense(1))
 
     def run(self, obs, act):
-        flat_obs = tf.contrib.layers.flatten(obs)
+        flat_obs = slim.layers.flatten(obs)
         x = tf.concat([flat_obs, act], axis=1)
         return self.model(x)
