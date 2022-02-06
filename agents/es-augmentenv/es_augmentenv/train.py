@@ -13,8 +13,6 @@ def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=1, 
                      feedback_interval=20):
     game_name = "augment_hopper"
     game = config.games[game_name]
-    sigma_init = .3
-    sigma_decay = .99
 
     model = make_model(game, make_env_inner=make_env)
     model.make_env()
