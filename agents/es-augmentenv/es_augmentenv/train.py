@@ -7,8 +7,10 @@ from es_augmentenv import config
 
 from gym.wrappers import Monitor
 
-def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=1, optimizer="cmaes",predictor=None,
-                     show_video=False, feedback_interval=20):
+
+def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=1, sigma_init=0.3,
+                     sigma_decay=.99, optimizer="cmaes", predictor=None, show_video=False,
+                     feedback_interval=20):
     game_name = "augment_hopper"
     game = config.games[game_name]
     sigma_init = .3
@@ -52,7 +54,7 @@ def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=1, 
         for i, solution in enumerate(tqdm(solutions)):
             model.set_model_params(solution)
             model.make_env()
-            feedback = episodes % feedback_interval == 0
+            feedback = episodes % feedback_interval == 0 and feedback_interval != np.inf
             rewards, ts = simulate(model, train_mode=True, render_mode=False, num_episode=num_episodes, seed=seeds[i],
                                    max_len=max_len, predictor=predictor, feedback=feedback)
             episodes += num_episodes

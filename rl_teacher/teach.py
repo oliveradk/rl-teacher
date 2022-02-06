@@ -227,17 +227,33 @@ class ComparisonMorphologyRewardPredictor(ComparisonRewardPredictor):
 
 def main():
     import argparse
+    import json
     parser = argparse.ArgumentParser()
-    parser.add_argument('-e', '--env_id', required=True)
-    parser.add_argument('-p', '--predictor', required=True)
-    parser.add_argument('-n', '--name', required=True)
+
+    #parse config
+    parser.add_argument('--conf', type=str)
+    args = parser.parse_args()
+    if args.conf is not None:
+        with open(args.conf, 'r') as f:
+            parser.set_defaults(**json.load(f))
+        args = parser.parse_args()
+
+    parser.add_argument('-e', '--env_id')
+    parser.add_argument('-p', '--predictor')
+    parser.add_argument('-n', '--name')
     parser.add_argument('-s', '--seed', default=1, type=int)
     parser.add_argument('-w', '--workers', default=1, type=int)
     parser.add_argument('-l', '--n_labels', default=None, type=int)
-    parser.add_argument('-L', '--pretrain_labels', default=None, type=int)
-    parser.add_argument('-t', '--num_timesteps', default=5e6, type=int)
-    parser.add_argument('-a', '--agent', default="parallel_trpo", type=str)
-    parser.add_argument('-i', '--pretrain_iters', default=10000, type=int)
+    parser.add_argument('-L', '--pretrain_labels', type=int)
+    parser.add_argument('-t', '--num_timesteps', type=int)
+    parser.add_argument('-a', '--agent', type=str)
+    parser.add_argument('-i', '--pretrain_iters', type=int)
+    parser.add_argument('-E', '--evo_alg')
+    parser.add_argument('-P', '--pop_size')
+    parser.add_argument('-N', '--num_episodes')
+    parser.add_argument('-f', '--feedback_interval')
+    parser.add_argument('-S', '--sigma_init')
+    parser.add_argument('-d', '--sigma_decay')
     parser.add_argument('-V', '--no_videos', action="store_true")
     args = parser.parse_args()
 
@@ -338,7 +354,11 @@ def main():
     elif args.agent == "es_augment":
         def make_env():
             return make_with_torque_removed(env_id)
-        train_es_augment(make_env, seed=args.seed, predictor=predictor)
+        feedback_interval = args.feedback_interval if args.predictor != 'rl' else np.inf
+        train_es_augment(make_env, seed=args.seed, pop_size=args.pop_size,
+                         num_episodes=args.num_episodes, sigma_init=args.sigma_init,
+                         sigma_decay=args.sigma_decay, optimizer=args.evo_alg,
+                         predictor=predictor, feedback_interval=feedback_interval)
     else:
         raise ValueError("%s is not a valid choice for args.agent" % args.agent)
 
