@@ -45,7 +45,8 @@ def export_video(frames, fname, fps=10):
     encoder = ImageEncoder(fname, shape, fps)
     for frame in frames:
         if raw_image:
-            encoder.proc.stdin.write(frame[1])
+            img = np.ascontiguousarray(frame[1])
+            encoder.proc.stdin.write(img)
         else:
             encoder.capture_frame(frame)
     encoder.close()

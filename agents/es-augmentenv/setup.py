@@ -9,8 +9,8 @@ if sys.version_info.major != 3:
 setup(name='es_augmentenv',
     version='0.0.1',
     install_requires=[
-        'gym[mujoco] ~= 0.9.2',
-        'mujoco-py ~= 0.5.7',
+        'gym',
+        'mujoco-py',
         'multiprocess ~= 0.70.5',
         'numpy',
         'cma'

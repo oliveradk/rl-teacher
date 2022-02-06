@@ -35,15 +35,14 @@ class MjViewer(TransparentWrapper):
     def render_full_obs(self, full_obs):
         old_obs = self._get_full_obs()
         self._set_full_obs(full_obs)
-        self._get_viewer().render()
-        data, width, height = self._get_viewer().get_image()
-        result = ((width, height, 3), data)
+        data = np.flipud(self.render("rgb_array"))
+        result = (data.shape, data)
         self._set_full_obs(old_obs)
         return result
 
-    def _step(self, a):
+    def step(self, a):
         human_obs = self._get_full_obs()
-        ob, reward, done, info = self.env._step(a)
+        ob, reward, done, info = self.env.step(a)
         info["human_obs"] = human_obs
         return ob, reward, done, info
 
@@ -56,8 +55,8 @@ class UseReward(TransparentWrapper):
         self.reward_info_key = reward_info_key
         super().__init__(env)
 
-    def _step(self, a):
-        ob, reward, done, info = super()._step(a)
+    def step(self, a):
+        ob, reward, done, info = super().step(a)
         return ob, info[self.reward_info_key], done, info
 
 class NeverDone(TransparentWrapper):
@@ -67,8 +66,8 @@ class NeverDone(TransparentWrapper):
         self.bonus = bonus
         super().__init__(env)
 
-    def _step(self, a):
-        ob, reward, done, info = super()._step(a)
+    def step(self, a):
+        ob, reward, done, info = super().step(a)
         bonus = self.bonus(a, self.env.sim.data)
         reward = reward + bonus
         done = False
@@ -127,8 +126,8 @@ def simple_reacher():
     return limit(SimpleReacher(), 50)
 
 class SimpleReacher(mujoco.ReacherEnv):
-    def _step(self, a):
-        ob, _, done, info = super()._step(a)
+    def step(self, a):
+        ob, _, done, info = super().step(a)
         return ob, info["reward_dist"], done, info
 
 def reacher(short=False):
@@ -138,7 +137,7 @@ def reacher(short=False):
     return limit(t=20 if short else 50, env=env)
 
 def hopper(short=False):
-    bonus = lambda a, data: (data.qpos[1, 0] - 1) + 1e-3 * np.square(a).sum()
+    bonus = lambda a, data: (data.qpos[1] - 1) + 1e-3 * np.square(a).sum()
     env = mujoco.HopperEnv()
     env = MjViewer(fps=40, env=env)
     env = NeverDone(bonus=bonus, env=env)
@@ -146,7 +145,7 @@ def hopper(short=False):
     return env
 
 def augment_hopper(short=False):
-    bonus = lambda a, data: (data.qpos[1, 0] - 1) + 1e-3 * np.square(a).sum()
+    bonus = lambda a, data: (data.qpos[1] - 1) + 1e-3 * np.square(a).sum()
     env = AugmentHopper()
     env = MjViewer(fps=40, env=env)
     env = NeverDone(bonus=bonus, env=env)
