@@ -4,7 +4,7 @@ import json
 import sys
 import time
 
-from gym.wrappers import Monitor
+from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
 from es_augmentenv import config
 from es_augmentenv.envs.gym_mujoco_walkers import AugmentHopper
@@ -222,7 +222,7 @@ def compress_input_dct(obs):
   return new_obs.flatten()
 
 def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, max_len=-1, predictor=None,
-             feedback=False):
+             feedback=False, recorder=None):
 
   reward_list = []
   t_list = []
@@ -277,6 +277,9 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
         else:
           action = model.get_action(obs, t=t, mean_mode=False)
 
+      if recorder:
+        recorder.capture_frame()
+
       prev_obs = obs
 
       obs, reward, done, info = model.env.step(action)
@@ -295,6 +298,10 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
       total_reward += reward
 
       if done:
+        if recorder:
+          print("saved video to", recorder.path)
+          recorder.close()
+
         if train_mode and (total_reward > reward_threshold):
           total_reward += 100
 
@@ -315,10 +322,8 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
   return reward_list, t_list
 
 def record_video(model, dir):
-  model.env = Monitor(model.env, directory=dir,video_callable=lambda episode_id: True,
-                      write_upon_reset=True, force=True)
-
-  simulate(model, train_mode=False, render_mode=render_mode, num_episode=1)
+  recorder = VideoRecorder(model.env, path=dir)
+  simulate(model, train_mode=False, render_mode=False, num_episode=1, recorder=recorder)
 
 def main():
 

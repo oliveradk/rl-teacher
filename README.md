@@ -212,6 +212,11 @@ augmentable environment inheriting from [AugmentMujocoXMLEnv](agents/es-augmente
 ```angular2html
 python rl_teacher/teach.py -p human --pretrain_labels 175 -e AugmentHopper-v1 -a es_augment -n human-175
 ```
+or run from config:
+```angular2html
+python rl_teacher/teach.py --conf config/es_augment.json --store_params
+```
+
 
 
 

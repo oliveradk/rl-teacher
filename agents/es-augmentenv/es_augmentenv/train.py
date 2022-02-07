@@ -1,5 +1,8 @@
+import os.path
+
 import numpy as np
 from tqdm import tqdm
+import datetime as dt
 
 from es_augmentenv.es import SimpleGA, CMAES
 from es_augmentenv.model import make_model, simulate, record_video
@@ -8,9 +11,9 @@ from es_augmentenv import config
 from gym.wrappers import Monitor
 
 
-def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=1, sigma_init=0.3,
-                     sigma_decay=.99, optimizer="cmaes", predictor=None, show_video=False,
-                     feedback_interval=20):
+def train_es_augment(make_env, seed, name, pop_size=16, max_len=3000, num_episodes=1, sigma_init=0.3,
+                     sigma_decay=.99, optimizer="cmaes", predictor=None, feedback_interval=20,
+                     show_video=False, store_params=False):
     game_name = "augment_hopper"
     game = config.games[game_name]
 
@@ -75,7 +78,12 @@ def train_es_augment(make_env, seed, pop_size=16, max_len=3000, num_episodes=1, 
 
         if show_video:
             print("recording video")
-            record_video(model, f"tmp/{gen}")
+            record_video(model, os.path.join(os.path.dirname(__file__), f"saved_videos/gen_{gen}_{name}.mp4"))
+
+        if store_params:
+            file_path = os.path.join(os.path.dirname(__file__), f"saved_params/gen_{gen}_{name}.npy")
+            with open(file_path, "wb") as f:
+                np.save(f, np.array(model_params).round(4))
 
 
 class Seeder:
