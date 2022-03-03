@@ -74,8 +74,12 @@ class HumanComparisonCollector():
         local_path = osp.join(tmp_media_dir, media_id)
         gcs_bucket = os.environ.get('RL_TEACHER_GCS_BUCKET')
         gcs_path = osp.join(gcs_bucket, media_id)
-        _write_and_upload_video(self.env_id, gcs_path, local_path, segment)
-        #self._upload_workers.apply_async(_write_and_upload_video, (self.env_id, gcs_path, local_path, segment))
+        p = multiprocessing.Process(target=_write_and_upload_video, args=(self.env_id, gcs_path, local_path, segment))
+        p.start()
+        p.join()
+        #TODO: set such that 4 processes can run at a time?
+        #_write_and_upload_video(self.env_id, gcs_path, local_path, segment)
+        # self._upload_workers.apply_async(_write_and_upload_video, (self.env_id, gcs_path, local_path, segment))
 
         media_url = "https://storage.googleapis.com/%s/%s" % (gcs_bucket.lstrip("gs://"), media_id)
         return media_url
