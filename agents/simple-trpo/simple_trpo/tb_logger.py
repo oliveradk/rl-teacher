@@ -1,6 +1,6 @@
 import os.path as osp
 
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 CLIP_LENGTH = 1.5
 

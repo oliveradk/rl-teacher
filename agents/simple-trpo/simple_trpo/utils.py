@@ -4,7 +4,7 @@ import random
 
 import numpy as np
 import scipy.signal
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 seed = 1
 random.seed(seed)

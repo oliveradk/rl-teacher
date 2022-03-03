@@ -1,9 +1,10 @@
 import multiprocess
-from time import clock as time
+from time import perf_counter as time
 from time import sleep
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 from parallel_trpo.utils import filter_ob, make_network
 
 class Actor(multiprocess.Process):

@@ -1,9 +1,10 @@
 import multiprocessing
 from collections import OrderedDict
-from time import clock as time
+from time import perf_counter as time
 
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_eager_execution()
 
 from parallel_trpo import utils
 from parallel_trpo.value_function import LinearVF
