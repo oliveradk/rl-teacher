@@ -165,3 +165,123 @@ class ParallelRollout(object):
     def end(self):
         for i in range(self.num_workers):
             self.tasks_q.put("kill")
+
+class SequentialRollout(object):
+
+    def __init__(self, env_id, make_env, reward_predictor, max_timesteps_per_episode, seed):
+        self.predictor = reward_predictor
+        self.actor = SequentialActor(env_id, make_env, seed, max_timesteps_per_episode)
+
+        # we will start by running 20,000 / 1000 = 20 episodes for the first iteration  TODO OLD
+        self.average_timesteps_in_episode = 1000
+
+    def rollout(self, timesteps):
+        start_time = time()
+        # keep 20,000 timesteps per update  TODO OLD
+        num_rollouts = int(timesteps / self.average_timesteps_in_episode)
+
+        paths = self.actor.get_rollouts(num_rollouts)
+
+        for i, path in enumerate(paths):
+            print("Modifying Reward")
+            ################################
+            #  START REWARD MODIFICATIONS  #
+            ################################
+            path["original_rewards"] = path["rewards"]
+            path["rewards"] = self.predictor.predict_reward(path)
+            self.predictor.path_callback(path)
+            ################################
+            #   END REWARD MODIFICATIONS   #
+            ################################
+
+            paths[i] = path
+
+        self.average_timesteps_in_episode = sum([len(path["rewards"]) for path in paths]) / len(paths)
+
+        return paths, time() - start_time
+
+    def set_policy_weights(self, parameters):
+        self.actor.set_policy(parameters)
+
+    def end(self):
+        pass
+
+class SequentialActor():
+
+    def __init__(self, env_id, make_env, seed, max_timesteps_per_episode):
+        self.max_timesteps_per_episode = max_timesteps_per_episode
+
+        self.env = make_env(env_id)
+        self.env.seed = seed
+
+        # tensorflow variables (same as in model.py)
+        observation_size = self.env.observation_space.shape[0]
+        hidden_size = 64
+        action_size = np.prod(self.env.action_space.shape)
+
+        # tensorflow model of the policy
+        self.obs = tf.placeholder(tf.float32, [None, observation_size])
+
+        self.policy_vars, self.avg_action_dist, self.logstd_action_dist = make_network(
+            "policy-a", self.obs, hidden_size, action_size)
+
+        config = tf.ConfigProto(
+            device_count={'GPU': 0}
+        )
+        self.session = tf.Session(config=config)
+        self.session.run(tf.global_variables_initializer())
+
+    def set_policy(self, weights):
+        placeholders = {}
+        assigns = []
+        for var in self.policy_vars:
+            placeholders[var.name] = tf.placeholder(tf.float32, var.get_shape())
+            assigns.append(tf.assign(var, placeholders[var.name]))
+
+        feed_dict = {}
+        count = 0
+        for var in self.policy_vars:
+            feed_dict[placeholders[var.name]] = weights[count]
+            count += 1
+        self.session.run(assigns, feed_dict)
+
+    def get_rollouts(self, num_rollouts):
+        paths = []
+        for i in range(num_rollouts):
+            paths.append(self._rollout())
+        return paths
+
+    def act(self, obs):
+        obs = np.expand_dims(obs, 0)
+        avg_action_dist, logstd_action_dist = self.session.run(
+            [self.avg_action_dist, self.logstd_action_dist], feed_dict={self.obs: obs})
+        # samples the guassian distribution
+        act = avg_action_dist + np.exp(logstd_action_dist) * np.random.randn(*logstd_action_dist.shape)
+        return act.ravel(), avg_action_dist, logstd_action_dist
+
+    def _rollout(self):
+        obs, actions, rewards, avg_action_dists, logstd_action_dists, human_obs = [], [], [], [], [], []
+        ob = filter_ob(self.env.reset())
+        for i in range(self.max_timesteps_per_episode):
+            action, avg_action_dist, logstd_action_dist = self.act(ob)
+
+            obs.append(ob)
+            actions.append(action)
+            avg_action_dists.append(avg_action_dist)
+            logstd_action_dists.append(logstd_action_dist)
+
+            ob, rew, done, info = self.env.step(action)
+            ob = filter_ob(ob)
+
+            rewards.append(rew)
+            human_obs.append(info.get("human_obs"))
+
+            if done or i == self.max_timesteps_per_episode - 1:
+                path = {
+                    "obs": np.concatenate(np.expand_dims(obs, 0)),
+                    "avg_action_dist": np.concatenate(avg_action_dists),
+                    "logstd_action_dist": np.concatenate(logstd_action_dists),
+                    "rewards": np.array(rewards),
+                    "actions": np.array(actions),
+                    "human_obs": np.array(human_obs)}
+                return path

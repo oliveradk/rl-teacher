@@ -9,7 +9,7 @@ import numpy as np
 import gym
 
 from parallel_trpo.model import TRPO
-from parallel_trpo.rollouts import ParallelRollout
+from parallel_trpo.rollouts import ParallelRollout, SequentialRollout
 
 def print_stats(stats):
     for k, v in stats.items():
@@ -39,6 +39,7 @@ def train_parallel_trpo(
         seed=0,
         discount_factor=0.995,
         cg_damping=0.1,
+        sequential=True
 ):
     # Tensorflow is not fork-safe, so we must use spawn instead
     # https://github.com/tensorflow/tensorflow/issues/5448#issuecomment-258934405
@@ -57,9 +58,10 @@ def train_parallel_trpo(
         max_kl=max_kl,
         discount_factor=discount_factor,
         cg_damping=cg_damping)
-
-    rollouts = ParallelRollout(env_id, make_env, predictor, workers, max_timesteps_per_episode, seed)
-
+    if sequential:
+        rollouts = SequentialRollout(env_id, make_env, predictor, max_timesteps_per_episode, seed)
+    else:
+        rollouts = ParallelRollout(env_id, make_env, predictor, workers, max_timesteps_per_episode, seed)
     iteration = 0
     start_time = time()
 
@@ -70,7 +72,7 @@ def train_parallel_trpo(
         weights = learner.get_policy()
         rollouts.set_policy_weights(weights)
 
-        # run a bunch of async processes that collect rollouts
+        # run a bunch of async processes (or single sync process) that collect rollouts
         paths, rollout_time = rollouts.rollout(timesteps_per_batch)
 
         # learn from that data
