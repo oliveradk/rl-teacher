@@ -361,12 +361,10 @@ def main():
     elif args.agent == "es_augment":
         def make_env():
             return make_with_torque_removed(env_id)
-        feedback_interval = args.feedback_interval if args.predictor != 'rl' else np.inf
-        train_es_augment(make_env, seed=args.seed, name=args.name, pop_size=args.pop_size,
+        train_es_augment(make_env, seed=args.seed, name=name, pop_size=args.pop_size,
                          num_episodes=args.num_episodes, sigma_init=args.sigma_init,
                          sigma_decay=args.sigma_decay, optimizer=args.evo_alg,
-                         predictor=predictor, feedback_interval=feedback_interval,
-                         show_video=not args.no_videos, store_params=args.store_params)
+                         predictor=predictor, show_video=not args.no_videos, store_params=args.store_params)
     else:
         raise ValueError("%s is not a valid choice for args.agent" % args.agent)
 
