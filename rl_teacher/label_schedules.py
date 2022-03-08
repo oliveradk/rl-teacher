@@ -17,6 +17,7 @@ class LabelAnnealer(object):
         desired_frac = pretrain_frac + (1 - pretrain_frac) * (1 - exp_decay_frac)  # Start with 0.25 and anneal to 0.99
         return desired_frac * self._final_labels
 
+
 class ConstantLabelSchedule(object):
     def __init__(self, pretrain_labels, seconds_between_labels=3):
         self._started_at = None  # Don't initialize until we call n_desired_labels
@@ -28,3 +29,24 @@ class ConstantLabelSchedule(object):
         if self._started_at is None:
             self._started_at = time()
         return self._pretrain_labels + (time() - self._started_at) / self._seconds_between_labels
+
+class PausingLabelSchedule(object):
+    def __init__(self, pretrain_labels, seconds_between_labels=3):
+        self._started_at = None  # Don't initialize until we call n_desired_labels
+        self._seconds_between_labels = seconds_between_labels
+        self._pretrain_labels = pretrain_labels
+        self.pause_time = 0
+        self.pause_timer = None
+
+    @property
+    def n_desired_labels(self):
+        if self._started_at is None:
+            self._started_at = time()
+        return self._pretrain_labels + (time() - self._started_at - self.pause_time) / self._seconds_between_labels
+
+    def start_pause(self):
+        self.pause_timer = time()
+
+    def end_pause(self):
+        self.pause_time += time() - self.pause_timer
+
