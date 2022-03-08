@@ -14,7 +14,7 @@ from es_augmentenv.train import train_es_augment
 from rl_teacher.comparison_collectors import SyntheticComparisonCollector, HumanComparisonCollector
 from rl_teacher.envs import get_timesteps_per_episode
 from rl_teacher.envs import make_with_torque_removed
-from rl_teacher.label_schedules import LabelAnnealer, ConstantLabelSchedule
+from rl_teacher.label_schedules import LabelAnnealer, ConstantLabelSchedule, PausingLabelSchedule
 from rl_teacher.nn import FullyConnectedMLP
 from rl_teacher.segment_sampling import sample_segment_from_path
 from rl_teacher.segment_sampling import segments_from_rand_rollout
@@ -53,7 +53,6 @@ class ComparisonRewardPredictor():
         self.recent_segments = deque(maxlen=200)  # Keep a queue of recently seen segments to pull new comparisons from
         self._frames_per_segment = CLIP_LENGTH * env.fps
         self._steps_since_last_training = 0
-        self._n_timesteps_per_predictor_training = 1e5  # How often should we train our predictor?
         self._max_comparison_buffer = 10
         self._elapsed_predictor_training_iters = 0
 
@@ -361,12 +360,10 @@ def main():
     elif args.agent == "es_augment":
         def make_env():
             return make_with_torque_removed(env_id)
-        feedback_interval = args.feedback_interval if args.predictor != 'rl' else np.inf
-        train_es_augment(make_env, seed=args.seed, name=args.name, pop_size=args.pop_size,
+        train_es_augment(make_env, seed=args.seed, name=name, pop_size=args.pop_size,
                          num_episodes=args.num_episodes, sigma_init=args.sigma_init,
                          sigma_decay=args.sigma_decay, optimizer=args.evo_alg,
-                         predictor=predictor, feedback_interval=feedback_interval,
-                         show_video=not args.no_videos, store_params=args.store_params)
+                         predictor=predictor, show_video=not args.no_videos, store_params=args.store_params)
     else:
         raise ValueError("%s is not a valid choice for args.agent" % args.agent)
 

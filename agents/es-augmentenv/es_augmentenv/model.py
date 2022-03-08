@@ -221,8 +221,8 @@ def compress_input_dct(obs):
   new_obs /= float(obs.shape[2])
   return new_obs.flatten()
 
-def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, max_len=-1, predictor=None,
-             feedback=False, recorder=None):
+
+def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, max_len=-1, predictor=None, recorder=None):
 
   reward_list = []
   t_list = []
@@ -280,6 +280,7 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
       if recorder:
         recorder.capture_frame()
 
+      #TODO: add obs filter?
       prev_obs = obs
 
       obs, reward, done, info = model.env.step(action)
@@ -305,13 +306,11 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
         if train_mode and (total_reward > reward_threshold):
           total_reward += 100
 
+        path = {"obs": obs_list, "original_rewards": rewards_list, "actions": actions_list,
+                "human_obs": human_obs_list, "env_params": model.body_param}
         if predictor:
-          path = {"obs": obs_list, "original_rewards": rewards_list, "actions": actions_list,
-                  "human_obs": human_obs_list, "env_params": model.body_param}
           path["rew"] = predictor.predict_reward(path)
-          if feedback:
-            predictor.path_callback(path)
-          total_reward = np.sum(path["rew"])
+        total_reward = np.sum(path["rew"])
         break
 
     if render_mode:
@@ -319,7 +318,7 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
     reward_list.append(total_reward)
     t_list.append(t)
 
-  return reward_list, t_list
+  return path, reward_list, t_list
 
 def record_video(model, dir):
   recorder = VideoRecorder(model.env, path=dir)

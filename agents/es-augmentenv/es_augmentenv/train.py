@@ -3,6 +3,7 @@ import os.path
 import numpy as np
 from tqdm import tqdm
 import datetime as dt
+from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
 from es_augmentenv.es import SimpleGA, CMAES
 from es_augmentenv.model import make_model, simulate, record_video
@@ -12,7 +13,7 @@ from gym.wrappers import Monitor
 
 
 def train_es_augment(make_env, seed, name, pop_size=16, max_len=3000, num_episodes=1, sigma_init=0.3,
-                     sigma_decay=.99, optimizer="cmaes", predictor=None, feedback_interval=20,
+                     sigma_decay=.99, optimizer="cmaes", predictor=None,
                      show_video=False, store_params=False):
     game_name = "augment_hopper"
     game = config.games[game_name]
@@ -39,11 +40,21 @@ def train_es_augment(make_env, seed, name, pop_size=16, max_len=3000, num_episod
 
     gen = 0
     episodes = 0
+
     # initialize logging data
     # start_time = int(time.time())
     #
     # history = []
     # eval_log = []
+
+    if show_video:
+        vid_dir = f"{os.path.dirname(__file__)}/saved_videos/{name}"
+        os.mkdir(vid_dir)
+
+    if store_params:
+        param_dir = f"{os.path.dirname(__file__)}/saved_params/{name}"
+        os.mkdir(param_dir)
+
     while True:
         #get population
         solutions = es.ask()
@@ -51,6 +62,7 @@ def train_es_augment(make_env, seed, name, pop_size=16, max_len=3000, num_episod
         #evaluate population
         reward_list = []
         t_list = []
+        paths = []
         seeds = seeder.next_batch(pop_size)
         for i, solution in enumerate(tqdm(solutions)):
             model.set_model_params(solution)
@@ -59,8 +71,14 @@ def train_es_augment(make_env, seed, name, pop_size=16, max_len=3000, num_episod
             rewards, ts = simulate(model, train_mode=True, render_mode=False, num_episode=num_episodes, seed=seeds[i],
                                    max_len=max_len, predictor=predictor, feedback=feedback)
             episodes += num_episodes
+            paths.append(path)
             reward_list.append(np.min(rewards))
             t_list.append(np.mean(ts))
+
+        #add paths to comparison reward predictor
+        for path in paths:
+            predictor.path_callback(path)
+
         es.tell(reward_list)
 
         #update parameters
