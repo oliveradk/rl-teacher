@@ -231,9 +231,9 @@ def main():
     parser = argparse.ArgumentParser()
 
     #parse config
-    parser.add_argument('--conf', type=str)
-    args = parser.parse_args()
-    if args.conf is not None:
+    parser.add_argument('--conf', type=str, default=None)
+    args, _ = parser.parse_known_args()
+    if hasattr(args, "conf"):
         with open(args.conf, 'r') as f:
             parser.set_defaults(**json.load(f))
         args = parser.parse_args()
