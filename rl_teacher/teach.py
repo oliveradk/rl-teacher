@@ -231,12 +231,11 @@ def main():
     parser = argparse.ArgumentParser()
 
     #parse config
-    parser.add_argument('--conf', type=str)
-    args = parser.parse_args()
-    if args.conf is not None:
+    parser.add_argument('--conf', type=str, default=None)
+    args, _ = parser.parse_known_args()
+    if hasattr(args, "conf"):
         with open(args.conf, 'r') as f:
             parser.set_defaults(**json.load(f))
-        args = parser.parse_args()
 
     parser.add_argument('-e', '--env_id')
     parser.add_argument('-p', '--predictor')
@@ -260,16 +259,18 @@ def main():
     parser.add_argument('-z', '--store_params', action="store_true")
     args = parser.parse_args()
 
+    name = f"{args.name}_{datetime.now().strftime('%m_%d_%y_%H_%M_%S')}"
+
     print("Setting things up...")
 
     env_id = args.env_id
-    run_name = "%s/%s-%s" % (env_id, args.name, int(time()))
+    run_name = "%s/%s-%s" % (env_id, name, int(time()))
     summary_writer = make_summary_writer(run_name)
 
     env = make_with_torque_removed(env_id)
 
     num_timesteps = int(args.num_timesteps)
-    experiment_name = slugify(args.name)
+    experiment_name = slugify(name)
 
     if args.predictor == "rl":
         predictor = TraditionalRLRewardPredictor(summary_writer)
