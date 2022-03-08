@@ -67,9 +67,15 @@ def train_es_augment(make_env, seed, name, pop_size=16, max_len=3000, num_episod
         for i, solution in enumerate(tqdm(solutions)):
             model.set_model_params(solution)
             model.make_env()
-            feedback = episodes % feedback_interval == 0 and feedback_interval != np.inf
-            rewards, ts = simulate(model, train_mode=True, render_mode=False, num_episode=num_episodes, seed=seeds[i],
-                                   max_len=max_len, predictor=predictor, feedback=feedback)
+
+            recorder = VideoRecorder(model.env, path=f"{vid_dir}/sol_{i}_gen_{gen}_{name}.mp4") if show_video else None
+
+            if store_params:
+                with open(f"{param_dir}/sol_{i}_gen_{gen}_{name}.npy", "wb") as f:
+                    np.save(f, np.array(solution).round(4))
+
+            path, rewards, ts = simulate(model, train_mode=True, render_mode=False, num_episode=num_episodes, seed=seeds[i],
+                                   max_len=max_len, predictor=predictor, recorder=recorder)
             episodes += num_episodes
             paths.append(path)
             reward_list.append(np.min(rewards))

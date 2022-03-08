@@ -18,7 +18,7 @@ class SegmentVideoRecorder(object):
         self._counter = 0  # Internal counter of how many videos we've saved at a given iteration.
 
     def path_callback(self, path):
-        if self._num_paths_seen % self.checkpoint_interval == 0:  # and self._num_paths_seen != 0:
+        if self._num_paths_seen % self.checkpoint_interval == 0 and self._num_paths_seen != 0:
             fname = '%s/run_%s_%s.mp4' % (self.save_dir, self._num_paths_seen, self._counter)
             print("Saving video of run %s_%s to %s" % (self._num_paths_seen, self._counter, fname))
             write_segment_to_video(path, fname, self.env)
@@ -35,6 +35,7 @@ def write_segment_to_video(segment, fname, env):
     for i in range(int(env.fps * 0.2)):
         frames.append(frames[-1])
     export_video(frames, fname, fps=env.fps)
+    env.close()
 
 def export_video(frames, fname, fps=10):
     assert "mp4" in fname, "Name requires .mp4 suffix"
