@@ -5,7 +5,7 @@ import numpy as np
 from gym.envs import mujoco
 from gym.wrappers.time_limit import TimeLimit
 
-from es_augmentenv.envs.gym_mujoco_walkers import AugmentHopper
+from es_augmentenv.envs.gym_mujoco_walkers import AugmentHopper, FixedHopper
 
 class TransparentWrapper(gym.Wrapper):
     """Passes missing attributes through the wrapper stack"""
@@ -98,8 +98,10 @@ def task_by_name(name, short=False):
         return pendulum()
     elif name in ["doublependulum"]:
         return double_pendulum()
-    elif "augment_hopper":
+    elif name == "augmenthopper":
         return augment_hopper(short=short)
+    elif "fixedhopper":
+        return fixed_hopper(short=short)
     else:
         raise ValueError(name)
 
@@ -151,6 +153,15 @@ def augment_hopper(short=False):
     env = NeverDone(bonus=bonus, env=env)
     env = limit(t=300 if short else 1000, env=env)
     return env
+
+def fixed_hopper(short=False):
+    bonus = lambda a, data: (data.qpos[1] - 1) + 1e-3 * np.square(a).sum()
+    env = FixedHopper()
+    env = MjViewer(fps=40, env=env)
+    env = NeverDone(bonus=bonus, env=env)
+    env = limit(t=300 if short else 1000, env=env)
+    return env
+
 
 def humanoid(standup=True, short=False):
     env = mujoco.HumanoidEnv()

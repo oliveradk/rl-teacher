@@ -50,6 +50,10 @@ class AugmentHopper(AugmentMujocoXmlEnv):
         self.viewer.cam.elevation = -20
 
 
+class FixedHopper(AugmentHopper):
+    def augment_env(self, scale_vector):
+        pass
+
 def main():
     env = AugmentHopper()
     env.augment_env([1, 1, 1, 1, 1, 1, 1, 1, 1, 1])
