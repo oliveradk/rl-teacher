@@ -2,14 +2,12 @@ import os.path
 
 import numpy as np
 from tqdm import tqdm
-import datetime as dt
+
 from gym.wrappers.monitoring.video_recorder import VideoRecorder
 
 from es_augmentenv.es import SimpleGA, CMAES
-from es_augmentenv.model import make_model, simulate, record_video
+from es_augmentenv.model import make_model, simulate
 from es_augmentenv import config
-
-from gym.wrappers import Monitor
 
 
 def train_es_augment(make_env, seed, name, pop_size=16, max_len=3000, num_episodes=1, sigma_init=0.3,
