@@ -252,7 +252,12 @@ class SequentialActor():
         return paths
 
     def act(self, obs):
+        if obs.shape[0] != 11:
+            raise Exception("Obs not shape 11")
+        if self.obs.shape[1] != 11:
+            raise Exception("Place holder obs shape not 11")
         obs = np.expand_dims(obs, 0)
+        # TODO: problem is probably here
         avg_action_dist, logstd_action_dist = self.session.run(
             [self.avg_action_dist, self.logstd_action_dist], feed_dict={self.obs: obs})
         # samples the guassian distribution
@@ -263,6 +268,8 @@ class SequentialActor():
         obs, actions, rewards, avg_action_dists, logstd_action_dists, human_obs = [], [], [], [], [], []
         ob = filter_ob(self.env.reset())
         for i in range(self.max_timesteps_per_episode):
+            if ob.shape[0] != 11:
+                raise Exception("Obs shape not 11")
             action, avg_action_dist, logstd_action_dist = self.act(ob)
 
             obs.append(ob)
@@ -285,3 +292,8 @@ class SequentialActor():
                     "actions": np.array(actions),
                     "human_obs": np.array(human_obs)}
                 return path
+
+    def _shapes_equal(self, tensor_list, tensor_dict):
+        list_shapes = [tensor.shape for tensor in tensor_list]
+        dict_shapes = [tensor.shape for tensor in tensor_dict.values()]
+        return list_shapes == dict_shapes
