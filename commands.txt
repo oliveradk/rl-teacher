@@ -1,0 +1,7 @@
+Start the webapp:
+    python human-feedback-api/manage.py runserver 0.0.0.0:8000
+
+run agent from config:
+    python rl_teacher/teach.py --conf config/es_augment.json
+    python rl_teacher/teach.py --conf config/rl/rl.json
+
