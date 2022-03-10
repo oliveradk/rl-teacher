@@ -100,9 +100,6 @@ def train_es_augment(make_env, seed, name, pop_size=16, max_len=3000, num_episod
         print("cur best reward: ", curr_reward)
         print("best reward: ", reward)
 
-        if show_video:
-            print("recording video")
-            record_video(model, os.path.join(os.path.dirname(__file__), f"saved_videos/gen_{gen}_{name}.mp4"))
 
         if store_params:
             file_path = os.path.join(os.path.dirname(__file__), f"saved_params/gen_{gen}_{name}.npy")
