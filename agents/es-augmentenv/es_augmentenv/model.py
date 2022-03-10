@@ -320,10 +320,6 @@ def simulate(model, train_mode=False, render_mode=True, num_episode=5, seed=-1, 
 
   return path, reward_list, t_list
 
-def record_video(model, dir):
-  recorder = VideoRecorder(model.env, path=dir)
-  simulate(model, train_mode=False, render_mode=False, num_episode=1, recorder=recorder)
-
 def main():
 
   global RENDER_DELAY
