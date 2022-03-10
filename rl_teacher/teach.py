@@ -9,7 +9,7 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 from tensorflow.keras import backend as K
 from parallel_trpo.train import train_parallel_trpo
-from pposgd_mpi.run_mujoco import train_pposgd_mpi
+# from pposgd_mpi.run_mujoco import train_pposgd_mpi
 from es_augmentenv.train import train_es_augment
 
 from rl_teacher.comparison_collectors import SyntheticComparisonCollector, HumanComparisonCollector
