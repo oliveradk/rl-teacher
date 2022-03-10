@@ -1,18 +1,16 @@
 {
   "env_id": "AugmentHopper-v1",
   "predictor": "human",
-  "name": "es_human",
+  "name": "es_augment_100_4_4",
   "pretrain_labels": 100,
   "pretrain_iters": 10000,
-  "train_iters": 1000,
-  "train_interval": 64e3,
-  "seconds_between_labels": 1,
   "num_timesteps": 5e6,
   "agent": "es_augment",
-  "pop_size": 64,
-  "num_episodes": 1,
+  "pop_size": 4,
+  "num_episodes": 4,
+  "feedback_interval": 16,
   "evo_alg": "cmaes",
   "sigma_init": 0.3,
-  "store_params": "True",
-  "no_videos": "True"
+  "sigma_decay": 0.99,
+  "store_params": "True"
 }

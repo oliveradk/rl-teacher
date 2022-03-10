@@ -1,7 +1,7 @@
 {
   "env_id": "AugmentHopper-v1",
-  "predictor": "human",
-  "name": "es_human",
+  "predictor": "synth",
+  "name": "es_augment_synth",
   "pretrain_labels": 100,
   "pretrain_iters": 10000,
   "train_iters": 1000,
