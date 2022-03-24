@@ -253,6 +253,7 @@ def main():
     parser.add_argument('-f', '--train_interval', type=int)
     parser.add_argument('-E', '--evo_alg')
     parser.add_argument('-P', '--pop_size', type=int)
+    parser.add_argument('-g', '--num_gens', type=int)
     parser.add_argument('-N', '--num_episodes', type=int)
     parser.add_argument('-S', '--sigma_init', type=float)
     parser.add_argument('-d', '--sigma_decay')
@@ -308,7 +309,8 @@ def main():
             comparison_collector=comparison_collector,
             agent_logger=agent_logger,
             label_schedule=label_schedule,
-            timesteps_per_predictor_training= args.train_interval if args.train_interval else 1000
+            timesteps_per_predictor_training=args.train_interval if args.train_interval else 1000,
+            training_iters=args.train_iters
         )
 
         print("Starting random rollouts to generate pretraining segments. No learning will take place...")
@@ -362,9 +364,10 @@ def main():
     elif args.agent == "es_augment":
         def make_env():
             return make_with_torque_removed(env_id)
+        num_gens = args.num_gens if args.num_gens else None #TODO: fix command parsing system
         train_es_augment(make_env, seed=args.seed, name=name, pop_size=args.pop_size,
                          num_episodes=args.num_episodes, sigma_init=args.sigma_init,
-                         sigma_decay=args.sigma_decay, optimizer=args.evo_alg,
+                         sigma_decay=args.sigma_decay, optimizer=args.evo_alg, num_gens=num_gens,
                          predictor=predictor, show_video=not args.no_videos, store_params=args.store_params)
     else:
         raise ValueError("%s is not a valid choice for args.agent" % args.agent)
